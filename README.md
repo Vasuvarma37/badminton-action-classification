@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🏸 Badminton Action Classifier
 
 An AI-powered web app that classifies badminton shot types from video using a **BiGRU + Attention** neural network and **MediaPipe** pose estimation.
@@ -132,3 +133,7 @@ Response:
   "keypoints": [...30 frames × 26 values...]
 }
 ```
+=======
+# badminton-action-classification
+these project helps in predict the shot type in badminton
+>>>>>>> 09b8e9425f254632e6eb59992f565fb67ac0662e
