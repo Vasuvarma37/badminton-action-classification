@@ -1,4 +1,4 @@
 # model/__init__.py
-from .bilstm_attention import BadmintonBiLSTM, AttentionLayer
+from .bigru_attention import BadmintonBiGRU, AttentionLayer
 
-__all__ = ["BadmintonBiLSTM", "AttentionLayer"]
+__all__ = ["BadmintonBiGRU", "AttentionLayer"]

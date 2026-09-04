@@ -1,194 +1,134 @@
-# Badminton Action Classification — BiLSTM + MediaPipe
+# 🏸 Badminton Action Classifier
 
-> **Paper**: *Badminton Action Classification Based on Human Skeleton Data Extracted by AlphaPose* (ICSMD 2023)
-> **Improvements**: AlphaPose → MediaPipe | LSTM → BiLSTM + Attention | 80% → 85%+ target
+An AI-powered web app that classifies badminton shot types from video using a **BiGRU + Attention** neural network and **MediaPipe** pose estimation.
 
----
+**Live Demo:** _Deploy to Render using the steps below_
 
-## 🏸 What This Project Does
+## Shot Types Recognized
 
-Classifies badminton strokes from video clips using **skeleton keypoint sequences**:
+| Shot | Description |
+|------|-------------|
+| Backhand Drive | Fast flat stroke from the backhand side |
+| Backhand Net Shot | Delicate touch shot near the net |
+| Forehand Clear | High overhead defensive/attacking clear |
+| Forehand Drive | Aggressive flat drive with the forehand |
 
-| Class | Description |
-|---|---|
-| `backhand_drive` | Flat fast shot played backhand |
-| `backhand_net_shot` | Delicate backhand net touch |
-| `forehand_clear` | High deep overhead clear |
-| `forehand_drive` | Flat fast forehand shot |
+## Architecture
 
-**Pipeline**: Video → MediaPipe skeleton extraction → BiLSTM + Attention → Action label
-
----
-
-## ✨ Improvements Over the Paper
-
-| Paper | This Project |
-|---|---|
-| AlphaPose (complex, CUDA-heavy) | **MediaPipe Pose** (pip install, CPU-friendly) |
-| 17 keypoints → 51 features | **33 keypoints → 66 features** (richer spatial info) |
-| Uni-directional LSTM | **BiLSTM** (forward + backward temporal context) |
-| No attention | **Bahdanau Attention** (focuses on key frames) |
-| 80% accuracy | **Targeting 85%+** |
-| No augmentation | **Data augmentation** (noise, flip, scale) |
-| No regularisation | **Label smoothing + gradient clipping + weight decay** |
+- **Model:** 3-layer Bidirectional GRU + Bahdanau Attention (PyTorch)
+- **Input:** 30 frames × 13 joints × 2 coords = (30, 26)
+- **Keypoints:** MediaPipe Pose → 13-joint common skeleton
+- **Backend:** FastAPI (Python)
+- **Frontend:** React + Vite (dark theme, glassmorphism UI)
+- **Deployment:** Docker + Render
 
 ---
 
-## 📁 Project Structure
+## 🚀 Quick Start (Docker — Recommended)
+
+### Prerequisites
+- Docker + Docker Compose installed
+
+### Run locally (production build)
+```bash
+docker compose --profile prod up --build
+```
+- **Frontend:** http://localhost:80
+- **API:** http://localhost:8000
+
+### Run locally (dev with hot-reload)
+```bash
+# Terminal 1 — Start backend
+docker compose up backend --build
+
+# Terminal 2 — Start frontend dev server
+docker compose --profile dev up frontend-dev
+```
+- **Frontend:** http://localhost:5173
+- **API:** http://localhost:8000
+
+---
+
+## 🖥️ Local Dev (without Docker)
+
+### Backend (FastAPI)
+```bash
+pip install -r backend/requirements.txt
+cd backend
+uvicorn main:app --reload --port 8000
+```
+
+### Frontend (React + Vite)
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+---
+
+## ☁️ Deploy to Render (via GitHub)
+
+1. **Push** this repo to GitHub
+2. Go to [render.com](https://render.com) → New → Blueprint
+3. Connect your GitHub repo — Render auto-detects `render.yaml`
+4. Set the `VITE_API_URL` in the frontend service to your backend URL (e.g. `https://badminton-api.onrender.com`)
+5. Click **Apply** — both services deploy automatically
+
+> **Note:** The `model/saved_models/best_bigru.pth` checkpoint (~50MB) must be committed to the repo. Render's backend Docker image will load it at startup.
+
+---
+
+## Project Structure
 
 ```
-badminton-action-classification/
-│
-├── data/                          ← Place your video folders here
-│   ├── backhand_drive/
-│   ├── backhand_net_shot/
-│   ├── forehand_clear/
-│   └── forehand_drive/
-│
-├── extracted_keypoints/           ← Auto-generated .npy files
-│
-├── model/                         ← ALL model code (separate folder)
-│   ├── __init__.py
-│   ├── bilstm_attention.py        ← BiLSTM + Attention architecture
-│   ├── train.py                   ← Training loop
-│   ├── evaluate.py                ← Evaluation + metrics
-│   └── saved_models/              ← best_bilstm.pth checkpoint
-│
+├── backend/
+│   ├── main.py          # FastAPI app
+│   ├── predictor.py     # Model inference wrapper
+│   ├── requirements.txt
+│   └── Dockerfile
+├── frontend/
+│   ├── src/
+│   │   ├── pages/       # Home, Classify, About
+│   │   ├── components/  # Navbar, Footer, SkeletonViz, ...
+│   │   └── index.css    # Dark-theme design system
+│   ├── nginx.conf
+│   └── Dockerfile
+├── model/
+│   ├── bigru_attention.py
+│   └── saved_models/best_bigru.pth
 ├── keypoint_extraction/
-│   └── mediapipe_extractor.py     ← MediaPipe skeleton extraction
-│
+│   └── mediapipe_extractor.py
 ├── utils/
-│   ├── dataset.py                 ← PyTorch Dataset + DataLoaders
-│   └── visualize.py               ← Training curves + confusion matrix
-│
-├── notebooks/
-│   └── colab_demo.ipynb           ← Google Colab demo (free GPU)
-│
-├── results/                       ← Auto-generated plots + predictions
-├── config.py                      ← All hyperparameters
-├── main.py                        ← Unified CLI entry point
-├── download_dataset.py            ← Kaggle dataset downloader
-└── requirements.txt
+│   ├── dataset.py
+│   └── joint_mapping.py
+├── config.py
+├── docker-compose.yml
+└── render.yaml
 ```
 
 ---
 
-## 🚀 Quick Start
+## API Reference
 
-### 1. Install Dependencies
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/health` | Liveness probe |
+| GET | `/classes` | List action classes |
+| POST | `/predict` | Upload video → classification |
 
-```bash
-pip install -r requirements.txt
+### POST /predict
 ```
+Content-Type: multipart/form-data
+Body: video=<file>
 
-### 2. Get the Dataset
-
-**Option A**: Download via Kaggle CLI (recommended)
-```bash
-# First set up your Kaggle API key from https://www.kaggle.com/settings
-pip install kaggle
-python download_dataset.py
-```
-
-**Option B**: Manual download
-1. Go to https://www.kaggle.com/datasets/imrankhan75/badminton-action-classification
-2. Download and extract into `data/` with the folder structure above
-
-### 3. Run the Full Pipeline
-
-```bash
-# End-to-end (extract → train → evaluate)
-python main.py --mode all
-
-# Or step by step:
-python main.py --mode extract    # Step 1: Extract keypoints
-python main.py --mode train      # Step 2: Train BiLSTM
-python main.py --mode evaluate   # Step 3: Evaluate on test set
-```
-
-### 4. Sanity Check (no data needed)
-
-```bash
-python main.py --mode sanity
-```
-
----
-
-## 🧠 Model Architecture
-
-```
-Input (B, 10, 66)
-    │
-LayerNorm
-    │
-BiLSTM Layer 1  (hidden=128, bidirectional → 256)
-    │ Dropout(0.3)
-BiLSTM Layer 2  (hidden=128, bidirectional → 256)
-    │ Dropout(0.3)
-BiLSTM Layer 3  (hidden=128, bidirectional → 256)
-    │
-Bahdanau Attention  (weighted sum over 10 time steps)
-    │
-FC(256→64) + GELU + Dropout(0.3)
-    │
-FC(64→4)
-    │
-Softmax → Action label
-```
-
-**Parameters**: ~650K (lightweight enough to train on free Colab GPU in ~15 minutes)
-
----
-
-## ⚙️ Hyperparameters
-
-All hyperparameters are in [`config.py`](config.py):
-
-| Parameter | Value | Note |
-|---|---|---|
-| `FRAMES_PER_VIDEO` | 10 | Same as paper |
-| `INPUT_SIZE` | 66 | 33 landmarks × (x,y) |
-| `HIDDEN_SIZE` | 128 | Per BiLSTM direction |
-| `NUM_LAYERS` | 3 | Stacked BiLSTM |
-| `DROPOUT` | 0.3 | |
-| `BATCH_SIZE` | 32 | |
-| `NUM_EPOCHS` | 150 | With early stopping |
-| `LEARNING_RATE` | 0.001 | |
-| `EARLY_STOP_PAT` | 25 | Epochs without improvement |
-
----
-
-## 📊 Expected Results
-
-| Model | Test Accuracy |
-|---|---|
-| CNN (paper) | 60% |
-| LSTM (paper) | 80% |
-| **BiLSTM + Attention (ours)** | **85%+** |
-
-Results saved to `results/`:
-- `training_curves.png` — Loss and accuracy over epochs
-- `confusion_matrix.png` — Raw + normalised confusion matrix
-- `per_class_accuracy.png` — Per-class accuracy bar chart
-- `test_predictions.json` — All predictions + probabilities
-
----
-
-## ☁️ Google Colab
-
-Open `notebooks/colab_demo.ipynb` in Google Colab for free T4 GPU training.
-The notebook includes all steps: dataset download → extraction → training → evaluation.
-
----
-
-## 📖 Reference
-
-```bibtex
-@inproceedings{liang2023badminton,
-  title={Badminton Action Classification Based on Human Skeleton Data Extracted by AlphaPose},
-  author={Liang, Zhantu and Nyamasvisva, Tadiwa Elisha},
-  booktitle={2023 International Conference on Sensing, Measurement \& Data Analytics (ICSMD)},
-  year={2023},
-  doi={10.1109/ICSMD60522.2023.10490491}
+Response:
+{
+  "class": "forehand_clear",
+  "confidence": 0.9214,
+  "scores": [0.03, 0.02, 0.92, 0.03],
+  "classes": ["backhand_drive", "backhand_net_shot", "forehand_clear", "forehand_drive"],
+  "attention": [...30 values...],
+  "keypoints": [...30 frames × 26 values...]
 }
 ```

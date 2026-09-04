@@ -1,15 +1,15 @@
 """
 model/evaluate.py
-─────────────────
+
 Loads the best saved checkpoint and evaluates on the held-out test set.
 
 Outputs
 -------
-• Overall accuracy (printed to console)
-• Confusion matrix PNG  → results/confusion_matrix.png
-• Per-class accuracy PNG → results/per_class_accuracy.png
-• Classification report  (precision, recall, F1 per class)
-• Saves predictions JSON → results/test_predictions.json
+ Overall accuracy (printed to console)
+ Confusion matrix PNG   results/confusion_matrix.png
+ Per-class accuracy PNG  results/per_class_accuracy.png
+ Classification report  (precision, recall, F1 per class)
+ Saves predictions JSON  results/test_predictions.json
 
 Usage
 -----
@@ -30,7 +30,7 @@ from config import (
     MODEL_SAVE_DIR, RESULTS_DIR, ACTION_CLASSES,
     INPUT_SIZE, HIDDEN_SIZE, NUM_LAYERS, DROPOUT, FC_HIDDEN, NUM_CLASSES,
 )
-from model.bilstm_attention import BadmintonBiLSTM
+from model.bigru_attention import BadmintonBiGRU
 from utils.dataset import get_dataloaders
 from utils.visualize import (
     plot_confusion_matrix,
@@ -53,16 +53,16 @@ def _get_device() -> torch.device:
 
 
 def load_best_model(
-    checkpoint_name: str = "best_bilstm.pth",
+    checkpoint_name: str = "best_bigru.pth",
     device: torch.device | None = None,
-) -> tuple[BadmintonBiLSTM, dict]:
+) -> tuple[BadmintonBiGRU, dict]:
     """
     Load model from checkpoint.
 
     Returns
     -------
-    model      : BadmintonBiLSTM (eval mode)
-    checkpoint : dict with metadata (epoch, val_acc, history, …)
+    model      : BadmintonBiGRU (eval mode)
+    checkpoint : dict with metadata (epoch, val_acc, history, )
     """
     if device is None:
         device = _get_device()
@@ -76,7 +76,7 @@ def load_best_model(
 
     checkpoint = torch.load(checkpoint_path, map_location=device)
 
-    model = BadmintonBiLSTM(
+    model = BadmintonBiGRU(
         input_size  = INPUT_SIZE,
         hidden_size = HIDDEN_SIZE,
         num_layers  = NUM_LAYERS,
@@ -95,7 +95,7 @@ def load_best_model(
     return model, checkpoint
 
 
-def evaluate(checkpoint_name: str = "best_bilstm.pth") -> dict:
+def evaluate(checkpoint_name: str = "best_bigru.pth") -> dict:
     """
     Full evaluation pipeline.
 
@@ -107,11 +107,11 @@ def evaluate(checkpoint_name: str = "best_bilstm.pth") -> dict:
     device = _get_device()
     model, checkpoint = load_best_model(checkpoint_name, device)
 
-    # ── DataLoader ────────────────────────────────────────────────────────────
-    logger.info("Loading test set …")
+    #  DataLoader 
+    logger.info("Loading test set ")
     _, _, test_loader = get_dataloaders(augment_train=False)
 
-    # ── Inference ─────────────────────────────────────────────────────────────
+    #  Inference 
     all_preds  = []
     all_labels = []
     all_probs  = []
@@ -127,7 +127,7 @@ def evaluate(checkpoint_name: str = "best_bilstm.pth") -> dict:
             all_labels.extend(labels.cpu().tolist())
             all_probs.extend(probs.cpu().tolist())
 
-    # ── Metrics ───────────────────────────────────────────────────────────────
+    #  Metrics 
     correct = sum(p == l for p, l in zip(all_preds, all_labels))
     overall_acc = correct / len(all_labels)
 
@@ -136,7 +136,7 @@ def evaluate(checkpoint_name: str = "best_bilstm.pth") -> dict:
     logger.info("  (Paper LSTM baseline: 80.00%%)")
     logger.info("=" * 55)
 
-    # ── Plots ─────────────────────────────────────────────────────────────────
+    #  Plots 
     plot_confusion_matrix(all_labels, all_preds, ACTION_CLASSES)
     plot_per_class_accuracy(all_labels, all_preds, ACTION_CLASSES)
 
@@ -148,7 +148,7 @@ def evaluate(checkpoint_name: str = "best_bilstm.pth") -> dict:
             history["train_acc"],  history["val_acc"],
         )
 
-    # ── Save predictions ─────────────────────────────────────────────────────
+    #  Save predictions 
     preds_path = os.path.join(RESULTS_DIR, "test_predictions.json")
     with open(preds_path, "w") as f:
         json.dump(
@@ -161,9 +161,9 @@ def evaluate(checkpoint_name: str = "best_bilstm.pth") -> dict:
             },
             f, indent=2,
         )
-    logger.info("Predictions saved → %s", preds_path)
+    logger.info("Predictions saved  %s", preds_path)
 
-    # ── Build per-class accuracy dict ─────────────────────────────────────────
+    #  Build per-class accuracy dict 
     from sklearn.metrics import confusion_matrix as sk_cm
     cm = sk_cm(all_labels, all_preds)
     per_class = (cm.diagonal() / cm.sum(axis=1)).tolist()
@@ -175,9 +175,9 @@ def evaluate(checkpoint_name: str = "best_bilstm.pth") -> dict:
     }
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# 
 # Entry point
-# ─────────────────────────────────────────────────────────────────────────────
+# 
 if __name__ == "__main__":
     metrics = evaluate()
     print("\nPer-class accuracy:")

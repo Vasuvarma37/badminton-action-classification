@@ -1,5 +1,5 @@
 """
-main.py — Unified entry point for the badminton action classification pipeline.
+main.py  Unified entry point for the badminton action classification pipeline.
 
 Usage
 -----
@@ -29,7 +29,7 @@ Flags
     --overwrite     Re-extract keypoints even if .npy files already exist
     --epochs N      Override number of training epochs
     --lr F          Override learning rate
-    --checkpoint    Name of checkpoint file to save/load (default: best_bilstm.pth)
+    --checkpoint    Name of checkpoint file to save/load (default: best_bigru.pth)
     --use-bst       Incorporate BST skeleton dataset into training
 """
 
@@ -45,13 +45,13 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# 
 # Argument parser
-# ─────────────────────────────────────────────────────────────────────────────
+# 
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Badminton Action Classification — BiLSTM + MediaPipe + BST"
+        description="Badminton Action Classification  BiGRU + MediaPipe + BST"
     )
     parser.add_argument(
         "--mode",
@@ -79,8 +79,8 @@ def parse_args():
     parser.add_argument(
         "--checkpoint",
         type=str,
-        default="best_bilstm.pth",
-        help="Checkpoint filename (default: best_bilstm.pth)",
+        default="best_bigru.pth",
+        help="Checkpoint filename (default: best_bigru.pth)",
     )
     parser.add_argument(
         "--use-bst",
@@ -96,9 +96,9 @@ def parse_args():
     return parser.parse_args()
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# 
 # Pipeline stages
-# ─────────────────────────────────────────────────────────────────────────────
+# 
 
 def run_extract(overwrite: bool = False):
     logger.info("=" * 55)
@@ -108,19 +108,19 @@ def run_extract(overwrite: bool = False):
     run_extraction(overwrite=overwrite)
 
 
-def run_train(epochs=None, lr=None, checkpoint="best_bilstm.pth", use_bst=None):
+def run_train(epochs=None, lr=None, checkpoint="best_bigru.pth", use_bst=None):
     logger.info("=" * 55)
-    logger.info("  STAGE 2: Training BiLSTM + Attention")
+    logger.info("  STAGE 2: Training BiGRU + Attention")
     logger.info("=" * 55)
 
     import config
     kwargs = {}
     if epochs is not None:
         kwargs["num_epochs"] = epochs
-        logger.info("Override epochs → %d", epochs)
+        logger.info("Override epochs  %d", epochs)
     if lr is not None:
         kwargs["learning_rate"] = lr
-        logger.info("Override lr → %f", lr)
+        logger.info("Override lr  %f", lr)
     if use_bst is not None:
         kwargs["use_bst"] = use_bst
         logger.info("BST data: %s", "enabled" if use_bst else "disabled")
@@ -135,7 +135,7 @@ def run_train(epochs=None, lr=None, checkpoint="best_bilstm.pth", use_bst=None):
     )
 
 
-def run_evaluate(checkpoint="best_bilstm.pth"):
+def run_evaluate(checkpoint="best_bigru.pth"):
     logger.info("=" * 55)
     logger.info("  STAGE 3: Evaluation on Test Set")
     logger.info("=" * 55)
@@ -146,12 +146,12 @@ def run_evaluate(checkpoint="best_bilstm.pth"):
 
 def run_sanity():
     """Quick smoke-test: model forward pass without any data."""
-    logger.info("Running sanity check …")
+    logger.info("Running sanity check ")
     import torch
-    from model.bilstm_attention import BadmintonBiLSTM
+    from model.bigru_attention import BadmintonBiGRU
     from config import INPUT_SIZE, FRAMES_PER_VIDEO, NUM_CLASSES
 
-    model = BadmintonBiLSTM()
+    model = BadmintonBiGRU()
     model.eval()
     dummy = torch.randn(4, FRAMES_PER_VIDEO, INPUT_SIZE)
     with torch.no_grad():
@@ -176,22 +176,22 @@ def run_bst_check():
     for src in BST_SOURCE:
         src_dir = os.path.join(BST_DATA_DIR, src.value)
         if not os.path.isdir(src_dir):
-            logger.info("  [SKIP] %s — not downloaded", src.value)
+            logger.info("  [SKIP] %s  not downloaded", src.value)
             continue
         try:
             samples = load_bst_samples(source=src)
             seq, lbl = samples[0]
             logger.info(
-                "  [OK]   %s — %d samples | seq shape %s",
+                "  [OK]   %s  %d samples | seq shape %s",
                 src.value, len(samples), seq.shape,
             )
         except Exception as e:
-            logger.error("  [FAIL] %s — %s", src.value, e)
+            logger.error("  [FAIL] %s  %s", src.value, e)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# 
 # Entry point
-# ─────────────────────────────────────────────────────────────────────────────
+# 
 
 def main():
     args = parse_args()
@@ -203,7 +203,7 @@ def main():
         use_bst = True
     elif args.no_bst:
         use_bst = False
-    # else: None → train() uses config.USE_BST
+    # else: None  train() uses config.USE_BST
 
     if mode == "sanity":
         run_sanity()
@@ -224,9 +224,9 @@ def main():
         run_extract(overwrite=args.overwrite)
         run_train(epochs=args.epochs, lr=args.lr, checkpoint=args.checkpoint, use_bst=use_bst)
         metrics = run_evaluate(checkpoint=args.checkpoint)
-        print("\n── Final Results ──────────────────────────────────────────")
+        print("\n Final Results ")
         print(f"  Overall Test Accuracy : {metrics['overall_accuracy']:.2%}")
-        print("──────────────────────────────────────────────────────────")
+        print("")
 
 
 if __name__ == "__main__":

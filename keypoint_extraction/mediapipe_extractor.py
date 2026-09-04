@@ -1,6 +1,6 @@
 """
 mediapipe_extractor.py
-─────────────────────
+
 Extracts skeleton keypoints from badminton videos using MediaPipe Pose.
 
 Replaces AlphaPose from the original paper with a lightweight, pip-installable
@@ -43,9 +43,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# ─────────────────────────────────────────────────────────────────────────────
+# 
 # MediaPipe setup
-# ─────────────────────────────────────────────────────────────────────────────
+# 
 _mp_pose = mp.solutions.pose
 
 
@@ -96,7 +96,7 @@ def extract_keypoints_from_video(
 
     with _mp_pose.Pose(
         static_image_mode=True,          # treat each frame independently
-        model_complexity=1,              # 0=lite, 1=full, 2=heavy → balanced
+        model_complexity=1,              # 0=lite, 1=full, 2=heavy  balanced
         min_detection_confidence=min_detection_confidence,
         enable_segmentation=False,
     ) as pose:
@@ -114,9 +114,9 @@ def extract_keypoints_from_video(
     return keypoint_sequence
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# 
 # Batch extraction
-# ─────────────────────────────────────────────────────────────────────────────
+# 
 
 def run_extraction(
     data_dir: str = DATA_DIR,
@@ -155,7 +155,7 @@ def run_extraction(
         os.makedirs(dst_dir, exist_ok=True)
 
         if not os.path.isdir(src_dir):
-            logger.warning("Action folder not found: %s — skipping.", src_dir)
+            logger.warning("Action folder not found: %s  skipping.", src_dir)
             continue
 
         video_files = [
@@ -163,7 +163,7 @@ def run_extraction(
             if os.path.splitext(f)[1].lower() in video_exts
         ]
 
-        logger.info("Processing [%s] — %d videos found.", action, len(video_files))
+        logger.info("Processing [%s]  %d videos found.", action, len(video_files))
 
         for vf in video_files:
             stem = os.path.splitext(vf)[0]
@@ -178,18 +178,18 @@ def run_extraction(
             if kp is not None:
                 np.save(out_path, kp)
                 total_saved += 1
-                logger.debug("  Saved → %s", out_path)
+                logger.debug("  Saved  %s", out_path)
             else:
                 total_failed += 1
-                logger.warning("  Failed → %s", vf)
+                logger.warning("  Failed  %s", vf)
 
     logger.info(
         "Extraction complete. Saved: %d | Failed: %d", total_saved, total_failed
     )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# 
 # Script entry-point
-# ─────────────────────────────────────────────────────────────────────────────
+# 
 if __name__ == "__main__":
     run_extraction()

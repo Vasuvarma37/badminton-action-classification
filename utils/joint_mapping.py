@@ -1,6 +1,6 @@
 """
 utils/joint_mapping.py
-──────────────────────
+
 Defines the canonical 13-joint skeleton that both MediaPipe-33 and
 BST/COCO-17 skeletons can be projected onto, enabling the two datasets
 to be mixed without a feature-dimension mismatch.
@@ -25,7 +25,7 @@ COCO 17-joint indices used by BST/MMPose:
 
 import numpy as np
 
-# ── MediaPipe-33 → common-13 index table ──────────────────────────────────────
+#  MediaPipe-33  common-13 index table 
 # Each element is a MediaPipe landmark index.
 # Nose (idx 0 in MediaPipe) maps to common joint 12.
 _MP_TO_COMMON = [
@@ -44,7 +44,7 @@ _MP_TO_COMMON = [
     0,   # 12 nose
 ]
 
-# ── COCO-17 → common-13 index table ───────────────────────────────────────────
+#  COCO-17  common-13 index table 
 _COCO_TO_COMMON = [
     5,   # 0  L-shoulder
     6,   # 1  R-shoulder
@@ -71,7 +71,7 @@ def mediapipe_to_common(seq: np.ndarray) -> np.ndarray:
     Parameters
     ----------
     seq : np.ndarray, shape (T, 66)
-        Flattened [x0,y0, x1,y1, …, x32,y32] MediaPipe output.
+        Flattened [x0,y0, x1,y1, , x32,y32] MediaPipe output.
 
     Returns
     -------
@@ -92,7 +92,7 @@ def coco_to_common(seq: np.ndarray, J: int = 17) -> np.ndarray:
     Parameters
     ----------
     seq : np.ndarray, shape (T, J*2) or (T, J, 2)
-        BST/MMPose output — either flat or with explicit joint dimension.
+        BST/MMPose output  either flat or with explicit joint dimension.
     J   : int
         Number of joints in the source skeleton (default 17 for COCO).
 

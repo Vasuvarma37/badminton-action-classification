@@ -1,27 +1,44 @@
+# ── Python ──
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
-*.pyd
+.pytest_cache/
+*.egg-info/
+dist/
+.eggs/
+.mypy_cache/
 
-# Environments
-.env
-.venv
-env/
+# ── Virtual envs ──
+.venv/
 venv/
-ENV/
-env.bak/
-venv.bak/
+env/
 
-# Project specifics
-/model/saved_models/
-/results/
-/extracted_keypoints/
-/bst_data/
+# ── Large data files (not committed) ──
+data/
+bst_data/
+extracted_keypoints/
 
-# OS files
+# ── Frontend build ──
+frontend/dist/
+frontend/node_modules/
+
+# ── Docker ──
+.dockerignore
+
+# ── Env files ──
+.env
+.env.local
+.env.*.local
+
+# ── OS / IDE ──
 .DS_Store
 Thumbs.db
+.idea/
+.vscode/
+*.swp
 
-# Temp files
-*.tmp
-*.temp
+# ── Results / outputs ──
+results/*.png
+results/*.json
+
+# NOTE: model/saved_models/*.pth IS committed (needed by backend)

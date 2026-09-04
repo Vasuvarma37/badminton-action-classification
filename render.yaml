@@ -1,0 +1,44 @@
+# render.yaml — Render Blueprint
+# Deploys both backend API and frontend static site from a single GitHub repo.
+# Docs: https://render.com/docs/blueprint-spec
+
+services:
+  # ── FastAPI Backend ────────────────────────────────────────────
+  - type: web
+    name: badminton-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    plan: starter               # upgrade to standard for production
+    region: oregon              # choose closest to your users
+    envVars:
+      - key: CHECKPOINT_NAME
+        value: best_bigru.pth
+      - key: PYTHONUNBUFFERED
+        value: "1"
+    healthCheckPath: /health
+    autoDeploy: true
+
+  # ── React Frontend (Static Site) ──────────────────────────────
+  - type: web
+    name: badminton-ui
+    runtime: static
+    buildCommand: cd frontend && npm ci && npm run build
+    staticPublishPath: ./frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        # Replace with your actual Render backend URL after first deploy
+        value: https://badminton-api.onrender.com
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: no-cache
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+    routes:
+      # SPA — all routes fallback to index.html
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    autoDeploy: true
